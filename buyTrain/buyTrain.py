@@ -45,7 +45,7 @@ class BuyTic(object):
         # self.seatType = raw_input(u'[*] 请输入座位席别，以", "分割[例如二等座,一等座，硬座，硬卧]:')
 
         self.userName = '951020602@qq.com'
-        self.pwd = 'yangstars5038'
+        self.pwd = '****************'
         self.realName = u'杨全帅'
         self.buyName = u'杨全帅'
         self.date = '2017-12-22'
@@ -331,7 +331,8 @@ class BuyTic(object):
                 }
                 print "data_checkOrder=%s" % (data_checkOrder)
                 print "data_ForQueue=%s" % (data_ForQueue)
-                self.checkOrderInfo(data_checkOrder,data_ForQueue)
+                return self.checkOrderInfo(data_checkOrder,data_ForQueue)
+
 
     # 验证订单
     def checkOrderInfo(self, data_checkOrder,data_ForQueue):
@@ -370,9 +371,11 @@ class BuyTic(object):
             json_checkOrder = json.loads(res.content)
             if json_checkOrder['data']['submitStatus'] == True :
                 print "[*]下单提交成功，请登陆网站进行支付！"
+                return True
                 #发送手机短信
             else :
                 print "<!>下单提交成功，请登陆网站进行支付！"
+                return  False
 
 
 
@@ -389,13 +392,15 @@ if __name__ == '__main__':
         if chek:
             # （2）登陆
             if buyTic.loginTo():
-                # while(True):
-                # （3）登陆成功，余票查询
-                data_orderReserve = buyTic.getResidue()
-                if data_orderReserve != False:
-                    # (4)检查用户是否存在 urlcheck = 'https://kyfw.12306.cn/otn/login/checkUser'
-                    if buyTic.checkUser():
-                        # (7)提交预订单
-                        if buyTic.orderReserve(data_orderReserve):
-                            # (8)确认乘客信息
-                            buyTic.getUserInfo()
+                #循环
+                while(True):
+                    # （3）登陆成功，余票查询
+                    data_orderReserve = buyTic.getResidue()
+                    if data_orderReserve != False:
+                        # (4)检查用户是否存在 urlcheck = 'https://kyfw.12306.cn/otn/login/checkUser'
+                        if buyTic.checkUser():
+                            # (7)提交预订单
+                            if buyTic.orderReserve(data_orderReserve):
+                                # (8)确认乘客信息
+                                 if buyTic.getUserInfo()== True :
+                                    break
