@@ -43,7 +43,7 @@ class BuyTic(object):
         # self.to_station = station[raw_input(u'[*] 终点站：')]
         # self.train_number = raw_input(u'[*] 请输入车次号，以", "分割[例如G12,1237]:')
         self.userName = '951020602@qq.com'
-        self.pwd = 'yangstars5038'
+        self.pwd = '**************'
         self.realName = u'杨全帅'
         self.buyName = u'杨全帅'
         self.date = '2017-12-21'
