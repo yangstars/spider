@@ -11,18 +11,18 @@ from urllib import unquote
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-import urllib2
 import urllib3
+import ssl
 
 urllib3.disable_warnings()
 # from requests.packages.urllib3.exceptions import InsecureRequestWarning
 # # 禁用安全请求警告
 # requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-import ssl
 
 # 关闭12306的安全证书验证
 ssl._create_default_https_context = ssl._create_unverified_context
 
+#获取车站编码
 station = {}
 for i in cons.station_names.split('@'):
     if i:
@@ -42,16 +42,19 @@ class BuyTic(object):
         # self.from_station = station[raw_input(u'[*] 出发站：')]
         # self.to_station = station[raw_input(u'[*] 终点站：')]
         # self.train_number = raw_input(u'[*] 请输入车次号，以", "分割[例如G12,1237]:')
+        # self.seatType = raw_input(u'[*] 请输入座位席别，以", "分割[例如二等座,一等座，硬座，硬卧]:')
+
         self.userName = '951020602@qq.com'
-        self.pwd = '**************'
+        self.pwd = 'yangstars5038'
         self.realName = u'杨全帅'
         self.buyName = u'杨全帅'
-        self.date = '2017-12-21'
-        self.from_ = '北京'
+        self.date = '2017-12-22'
+        self.from_ = '枣庄'
         self.to_ = '上海'
+        self.seatType='1'#O:二等座  1：硬座  2 软卧是4  硬卧 3
         self.from_station = station[self.from_]
         self.to_station = station[self.to_]
-        self.train_number = 'G7,G9'
+        self.train_number = 'K47'
         print  self.from_station, self.to_station,
         self.headers = {
             'Origin': 'https://kyfw.12306.cn',
@@ -97,7 +100,6 @@ class BuyTic(object):
             im.close()
         except:
             print u'[*] 请输入验证码'
-            # =======================================================================
         captcha_solution = raw_input('[*] 请输入验证码位置，以","分割[例如2,5]:')
         return captcha_solution
 
@@ -126,12 +128,13 @@ class BuyTic(object):
         code = dic['result_code']
         # 取出验证结果，4：成功  5：验证失败  7：过期
         if str(code) == '4':
+            print '[*] 图片验证通过!'
             return True
         else:
+            print '<!> 图片验证失败，请重新验证!'
             return False
 
-            # 发送登录请求的方法
-
+    # 发送登录请求的方法
     def loginTo(self):
         # 发送登录信息
         data = {
@@ -165,14 +168,11 @@ class BuyTic(object):
 
         url = "https://kyfw.12306.cn/otn/index/initMy12306"
         response = self.session.get(url, headers=self.headers)
-        # print "------------------------------------------------------------"
-        # print response.text
-        # print "------------------------------------------------------------"
         if response.status_code == 200 and response.text.find(self.realName) != -1:
             print('[*] 恭喜你，登录成功，可以购票!')
             return True
         else:
-            print '[*] 对不起，登录失败，请检查登录信息!'
+            print '<!> 对不起，登录失败，请检查登录信息!'
             return False
 
     # 余票查询
@@ -181,53 +181,52 @@ class BuyTic(object):
             self.date, self.from_station, self.to_station)
         result = self.session.get(url=url, headers=self.headers, verify=False)
         json_html = json.loads(result.content)  # JSON编码的字符串转换回一个Python数据结构
-        print "*************************************************************************"
-
         if json_html['data'] != None:
             flag = 0
             # while True:
-            train_number = self.train_number.split(',')
-            for i in json_html['data']['result']:
+            train_number = self.train_number.split(',')# 你想购票的车次号 如 G7,G9
+            for train_data in json_html['data']['result']:
                 # 对每一条数据进行判断，是否有票
-                arrInfo = i.split('|')
-                # print arrInfo
-                if arrInfo[3] in train_number:
-                    # 查看该车次是否有票（高铁 二等座：-6 == 有，一等座：-5  商务座：-4
-                    if 'G' in arrInfo[3]:
-                        if u'无' != arrInfo[-7]:
-                            # 购票
-                            print ('%s车次可购买二等座车票' % (str(arrInfo[3])))
-
-                            # (5) 预订单data:
-                            data = {
-                                "secretStr": unquote(arrInfo[0]),
-                                "train_date": self.date,
-                                "back_train_date": self.date,
-                                "tour_flag": "dc",
-                                "purpose_codes": "ADULT",
-                                "query_from_station_name": self.from_,
-                                "query_to_station_name": self.to_,
-                                "undefined": None
-                            }
-                            # print "data======++++++=%s" % (str(data))
-                            # (6)检查用户是否存在 urlcheck = 'https://kyfw.12306.cn/otn/login/checkUser'
-                            if self.checkUser():
-                                # (7)提交预订单
-                                if self.orderReserve(data):
-                                    # (8)确认乘客信息
-                                    print "获取用户信息"
-                                    self.getUserInfo()
-
-                        else:
-                            print ('%s车次无二等座车票' % (str(arrInfo[3])))
-                    elif 'D' in arrInfo[3]:  # 动车 二等座：-6
-                        if u'无' != arrInfo[-7]:
-                            # 购票
-                            print ('%s车次可购买二等座车票' % (str(arrInfo[3])))
-                        else:
-                            print ('%s车次没有二等座车票' % (str(arrInfo[3])))
-                    else:  # 硬座 和 硬卧 TODO
-                        print arrInfo[-4]
+                arrInfo = train_data.split('|')#每一班车次的所有信息
+                print "-------------------------------------------------"
+                print arrInfo
+                print "-------------------------------------------------"
+                if arrInfo[3] in train_number:#只需要抓取你定义的车次信息
+                    # 查看该车次是否有票（高铁 二等座：-7 （30） 有，一等座：-6（31）  商务座：-5（32）  硬座：29 软卧：23  硬卧：28  无座：26
+                    # (5) 预订单data:
+                    data_orderReserve = {
+                        "secretStr": unquote(arrInfo[0]),
+                        "train_date": self.date,
+                        "back_train_date": self.date,
+                        "tour_flag": "dc",
+                        "purpose_codes": "ADULT",
+                        "query_from_station_name": self.from_,
+                        "query_to_station_name": self.to_,
+                        "undefined": None
+                    }
+                    #高铁
+                    if u'无' != arrInfo[-7] and arrInfo[-7] != "" :#说明是高铁 二等座
+                        print ('[*]可购买%s车次 二等座 车票' % (str(arrInfo[3])))
+                        return  data_orderReserve
+                        # # (6)检查用户是否存在 urlcheck = 'https://kyfw.12306.cn/otn/login/checkUser'
+                        # if self.checkUser():
+                        #     # (7)提交预订单
+                        #     if self.orderReserve(data):
+                        #         # (8)确认乘客信息
+                        #         #print "[*]获取用户信息"
+                        #         self.getUserInfo()
+                    elif u'无' != arrInfo[28] and arrInfo[28] != "":
+                        print ('[*]可购买%s车次 硬卧 车票' % (str(arrInfo[3])))
+                        return data_orderReserve
+                    elif u'无' != arrInfo[29] and arrInfo[29] != "":
+                        print ('[*]可购买%s车次 硬座 车票' % (str(arrInfo[3])))
+                        return data_orderReserve
+                    elif u'无' != arrInfo[26] and arrInfo[26] != "":
+                        print ('[*]可购买%s车次 无座 车票' % (str(arrInfo[3])))
+                        return data_orderReserve
+                    else:
+                        print ('<!> %s车次无票' % (str(arrInfo[3])))
+                        return False
 
     # 检查用户是否存在
     def checkUser(self):
@@ -241,12 +240,11 @@ class BuyTic(object):
             return True
 
     # 订单预定
-    def orderReserve(self, data):
+    def orderReserve(self, data_orderReserve):
         url_OrderRequest = 'https://kyfw.12306.cn/otn/leftTicket/submitOrderRequest'
-        res = self.session.post(url_OrderRequest, data=data, headers=self.headers)
+        res = self.session.post(url_OrderRequest, data=data_orderReserve, headers=self.headers)
         json_OrderRequest = json.loads(res.content)
-        print '/////////////////////////////////////////////////////'
-        print json_OrderRequest
+        # print json_OrderRequest
         if json_OrderRequest['httpstatus'] == 200 and json_OrderRequest['status'] == True:
             return True
 
@@ -268,7 +266,6 @@ class BuyTic(object):
         reg_station_train_code= re.compile(r"'station_train_code':'(.*?)'")
         reg_ypInfoDetail= re.compile(r"'ypInfoDetail':'(.*?)'")
 
-
         items_REPEAT_SUBMIT_TOKEN  = re.findall(reg_REPEAT_SUBMIT_TOKEN, response.text)
         items_key_check_isChange = re.findall(reg_key_check_isChange, response.text)
         items_leftTicketStr = re.findall(reg_leftTicketStr, response.text)
@@ -279,7 +276,6 @@ class BuyTic(object):
         items_from_station_telecode = re.findall(reg_from_station_telecode, response.text)
         items_station_train_code = re.findall(reg_station_train_code, response.text)
         items_ypInfoDetail = re.findall(reg_ypInfoDetail, response.text)
-
 
         self.REPEAT_SUBMIT_TOKEN = items_REPEAT_SUBMIT_TOKEN[0]
         self.key_check_isChange =items_key_check_isChange[0]
@@ -301,8 +297,8 @@ class BuyTic(object):
         dic = json.loads(result.content)
         for userinfo in dic['data']['normal_passengers']:
             if userinfo['passenger_name'] == self.buyName:
-                print "下单"
-                passengerTicketStr = "O,0," + userinfo['passenger_type'] + "," + userinfo['passenger_name'] + "," + userinfo['passenger_id_type_code'] + "," + userinfo['passenger_id_no'] + "," + userinfo['mobile_no'] + ",N"
+                print "[*]下单处理中···"
+                passengerTicketStr = self.seatType +",0," + userinfo['passenger_type'] + "," + userinfo['passenger_name'] + "," + userinfo['passenger_id_type_code'] + "," + userinfo['passenger_id_no'] + "," + userinfo['mobile_no'] + ",N"
                 oldPassengerStr = userinfo['passenger_name']+ "," + userinfo['passenger_id_type_code'] + "," + userinfo['passenger_id_no'] + ",1_"
 
                 data_checkOrder = {
@@ -312,7 +308,7 @@ class BuyTic(object):
                     'passengerTicketStr':passengerTicketStr ,
                     'oldPassengerStr':oldPassengerStr,
                     'tour_flag': 'dc',
-                    'whatsSelect':'1',
+                    # 'whatsSelect':'1',
                     'randCode': '',
                     '_json_att': '',
                     'REPEAT_SUBMIT_TOKEN': str(self.REPEAT_SUBMIT_TOKEN)
@@ -333,19 +329,18 @@ class BuyTic(object):
                     '_json_att': '',
                     'REPEAT_SUBMIT_TOKEN': str(self.REPEAT_SUBMIT_TOKEN)
                 }
-
                 print "data_checkOrder=%s" % (data_checkOrder)
                 print "data_ForQueue=%s" % (data_ForQueue)
                 self.checkOrderInfo(data_checkOrder,data_ForQueue)
 
     # 验证订单
     def checkOrderInfo(self, data_checkOrder,data_ForQueue):
-
+        print "校验订单中······"
         url = 'https://kyfw.12306.cn/otn/confirmPassenger/checkOrderInfo'
         res = self.session.post(url=url,data=data_checkOrder,headers=self.headers, verify=False)
         json_checkOrder= json.loads(res.content)
+        print "json_checkOrder=%s"%(json_checkOrder)
         if json_checkOrder['data']['submitStatus'] == True:
-            print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
             # 获取队列个数
             url = 'https://kyfw.12306.cn/otn/confirmPassenger/getQueueCount'
             GMT_FORMAT = '%a %b %d %Y 00:00:00 GMT+0800'
@@ -355,7 +350,7 @@ class BuyTic(object):
                 'train_date': gmt_time,#Wed Dec 20 2017 00:00:00 GMT+0800
                 'train_no': self.train_no,
                 'stationTrainCode': self.station_train_code,
-                'seatType': "O",#座位型号 二等座 O
+                'seatType': self.seatType,#座位型号 二等座 O
                 'fromStationTelecode': self.from_station_telecode,
                 'toStationTelecoe': self.to_station_telecode,
                 'leftTicket': self.ypInfoDetail,
@@ -364,21 +359,26 @@ class BuyTic(object):
                 '_json_att': '',
                 'REPEAT_SUBMIT_TOKEN':  self.REPEAT_SUBMIT_TOKEN
             }
-            print data_getQueueCount
+            print "data_getQueueCount=%s" % (data_getQueueCount)
             res = self.session.post(url=url, data=data_getQueueCount, headers=self.headers, verify=False)
             with open("QueueCount.txt", "a+") as fo:
                 fo.write(res.text)
-
             url = 'https://kyfw.12306.cn/otn/confirmPassenger/confirmSingleForQueue'
             res = self.session.post(url, data=data_ForQueue,headers=self.headers, verify=False)
             with open("ForQueue.txt", "a+") as fo:
                 fo.write(res.text)
+            json_checkOrder = json.loads(res.content)
+            if json_checkOrder['data']['submitStatus'] == True :
+                print "[*]下单提交成功，请登陆网站进行支付！"
+                #发送手机短信
+            else :
+                print "<!>下单提交成功，请登陆网站进行支付！"
 
-            print "下单成功"
 
 
+
+#程序入口
 if __name__ == '__main__':
-
     buyTic = BuyTic()
     # （1）图片验证
     yan = buyTic.getImg()
@@ -387,14 +387,15 @@ if __name__ == '__main__':
     while not chek:
         chek = buyTic.checkYanZheng(yan)
         if chek:
-            print '[*] 验证通过!'
             # （2）登陆
             if buyTic.loginTo():
+                # while(True):
                 # （3）登陆成功，余票查询
-                buyTic.getResidue()
-                # (4)检查用户是否存在
-                # if buyTic.checkUser():
-                #    continue
-
-        else:
-            print '[*] 验证失败，请重新验证!'
+                data_orderReserve = buyTic.getResidue()
+                if data_orderReserve != False:
+                    # (4)检查用户是否存在 urlcheck = 'https://kyfw.12306.cn/otn/login/checkUser'
+                    if buyTic.checkUser():
+                        # (7)提交预订单
+                        if buyTic.orderReserve(data_orderReserve):
+                            # (8)确认乘客信息
+                            buyTic.getUserInfo()
