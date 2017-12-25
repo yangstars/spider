@@ -45,10 +45,10 @@ class BuyTic(object):
         # self.seatType = raw_input(u'[*] 请输入座位席别，以", "分割[例如二等座,一等座，硬座，硬卧]:')
 
         self.userName = '951020602@qq.com'
-        self.pwd = '****************'
+        self.pwd = 'yangstars5038'
         self.realName = u'杨全帅'
         self.buyName = u'杨全帅'
-        self.date = '2017-12-22'
+        self.date = '2017-12-24'
         self.from_ = '枣庄'
         self.to_ = '上海'
         self.seatType='1'#O:二等座  1：硬座  2 软卧是4  硬卧 3
@@ -115,12 +115,14 @@ class BuyTic(object):
             yanList.append(yanSol[int(item)])
             # 正确验证码的坐标拼接成字符串，作为网络请求时的参数
         yanStr = ','.join(yanList)
+        print "yanStr%s="%(yanStr)
         checkUrl = "https://kyfw.12306.cn/passport/captcha/captcha-check"
         data = {
             'login_site': 'E',  # 固定的
             'rand': 'sjrand',  # 固定的
             'answer': yanStr  # 验证码对应的坐标，两个为一组，跟选择顺序有关,有几个正确的，输入几个
         }
+        print data
         # 发送验证
         cont = self.session.post(url=checkUrl, data=data, headers=self.headers, verify=False)
         # 返回json格式的字符串，用json模块解析
