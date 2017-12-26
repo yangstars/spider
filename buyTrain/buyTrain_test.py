@@ -48,7 +48,7 @@ class BuyTic(object):
         # self.lianzhong_password = raw_input(u'[*] 请输入联众密码:')
 
         self.userName = '951020602@qq.com'
-        self.pwd = '**********'
+        self.pwd = 'yangstars5038'
         # self.realName = u'杨全帅'
         self.buyName = u'杨全帅'
         self.date = '2017-12-26'
@@ -56,7 +56,7 @@ class BuyTic(object):
         self.to_ = '上海'
         self.train_number = 'K47'
         self.lianzhong_username = 'moxiao'
-        self.lianzhong_password = '************'
+        self.lianzhong_password = 'moxiao1990,.'
 
         self.seatType='1'#O:二等座  1：硬座  2 软卧是4  硬卧 3
         self.from_station = station[self.from_]
