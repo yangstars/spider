@@ -48,13 +48,13 @@ class BuyTic(object):
         self.pwd = 'yangstars5038'
         self.realName = u'杨全帅'
         self.buyName = u'杨全帅'
-        self.date = '2017-12-24'
-        self.from_ = '枣庄'
-        self.to_ = '上海'
-        self.seatType='1'#O:二等座  1：硬座  2 软卧是4  硬卧 3
+        self.date = '2017-02-10'
+        self.from_ = '上海'
+        self.to_ = '枣庄'
+        self.seatType='O'#O:二等座  1：硬座  2 软卧是4  硬卧 3
         self.from_station = station[self.from_]
         self.to_station = station[self.to_]
-        self.train_number = 'K47'
+        self.train_number = 'G234'
         print  self.from_station, self.to_station,
         self.headers = {
             'Origin': 'https://kyfw.12306.cn',
@@ -146,6 +146,7 @@ class BuyTic(object):
         }
         url = "https://kyfw.12306.cn/passport/web/login"
         response = self.session.post(url, headers=self.headers, data=data)
+        print response.text
         if response.status_code == 200:
             result = json.loads(response.text)
             print(result.get("result_message"), result.get("result_code"))

@@ -7,17 +7,23 @@ import urllib2
 import requests
 import re
 import json
+import parse
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 # if hasattr(ssl, '_create_unverified_context'):
 #     ssl._create_default_https_context = ssl._create_unverified_context
 
-
-UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.89 Safari/537.36"
-
+headers = {
+            'Origin': 'https://kyfw.12306.cn',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
+            'Referer': 'https://kyfw.12306.cn/otn/login/init',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept': 'application/json, text/javascript, */*; q=0.01'
+        }
 pic_url = "https://kyfw.12306.cn/otn/passcodeNew/getPassCodeNew?module=login&rand=sjrand&0.7174227166135074"
-
+session = requests.session()
+session.verify = False
 def get_img():
     resp = urllib.urlopen(pic_url)
     raw = resp.read()
@@ -27,16 +33,25 @@ def get_img():
     f.write(raw)
     f.close()
     print 1111
-    return Image.open("./screenshots/tmp.jpg")
+    return Image.open("screenshots/tmp.jpg")
 
 
 def getImg():
-    url = "https://kyfw.12306.cn/passport/captcha/captcha-image?login_site=E&module=login&rand=sjrand";
-    response = urllib.urlopen(url=pic_url,)
-    # 把验证码图片保存到本地
-    with open('../screenshots/img.jpg', 'wb') as f:
-        f.write(response.content)
-        # 用pillow模块打开并解析验证码,这里是假的，自动解析以后学会了再实现
+    data = {
+        "login_site": "E",
+        "module": "login",
+        "rand": "sjrand",
+        "0.17231872703389062": ""
+    }
+
+    # 获取验证码
+    param = parse.urlencode(data)
+    url = "https://kyfw.12306.cn/passport/captcha/captcha-image?{}".format(param)
+    response = session.get(url, headers=headers)
+    if response.status_code == 200:
+        file = BytesIO(response.content)
+        img = Image.open(file)
+        img.show()
     try:
         im = Image.open('img.jpg')
         # 展示验证码图片，会调用系统自带的图片浏览器打开图片，线程阻塞
